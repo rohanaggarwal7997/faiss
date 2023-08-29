@@ -11,52 +11,73 @@
 #include <gtest/gtest.h>
 
 #include <faiss/IndexBinaryFlat.h>
+#include <faiss/IndexHNSW.h>
+#include <faiss/utils/utils.h>
+#include <faiss/impl/HNSW.h>
 #include <faiss/utils/hamming.h>
+using namespace std;
+
 
 TEST(BinaryFlat, accuracy) {
     // dimension of the vectors to index
-    int d = 64;
+    int d = 16;
 
-    // size of the database we plan to index
-    size_t nb = 1000;
+    int m_array[] = {32,48, 64};
+    int ef_construction[] = {40,60,100};
+    int size_array[] = {10000,100000,500000,1000000};
+    int ef_search_array[] = {32,48,64,96,128,256};
 
-    // make the index object and train it
-    faiss::IndexBinaryFlat index(d);
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            // size of the database we plan to index
+            size_t nb = size_array[j];
 
-    std::vector<uint8_t> database(nb * (d / 8));
-    for (size_t i = 0; i < nb * (d / 8); i++) {
-        database[i] = rand() % 0x100;
-    }
+            // make the index object and train it
+            faiss::IndexHNSWFlat index(d, m_array[i]);
 
-    { // populating the database
-        index.add(nb, database.data());
-    }
+            index.hnsw.efConstruction = ef_construction[i];
 
-    size_t nq = 200;
+            index.pretty_print2();
+            cout<<"Number of elements "<<nb<<endl;
 
-    { // searching the database
-
-        std::vector<uint8_t> queries(nq * (d / 8));
-        for (size_t i = 0; i < nq * (d / 8); i++) {
-            queries[i] = rand() % 0x100;
-        }
-
-        int k = 5;
-        std::vector<faiss::idx_t> nns(k * nq);
-        std::vector<int> dis(k * nq);
-
-        index.search(nq, queries.data(), k, dis.data(), nns.data());
-
-        for (size_t i = 0; i < nq; ++i) {
-            faiss::HammingComputer8 hc(queries.data() + i * (d / 8), d / 8);
-            hamdis_t dist_min = hc.hamming(database.data());
-            for (size_t j = 1; j < nb; ++j) {
-                hamdis_t dist = hc.hamming(database.data() + j * (d / 8));
-                if (dist < dist_min) {
-                    dist_min = dist;
-                }
+            float *database = new float[nb*d];
+            for (size_t i = 0; i < nb * (d); i++) {
+                database[i] = (float)(rand() % 0x100);
             }
-            EXPECT_EQ(dist_min, dis[k * i]);
+
+            { // populating the database
+                index.add(nb, database);
+            }
+
+            size_t nq = 1;
+            float *queries = new float[nq*d];
+
+            for (size_t i = 0; i < nq * (d); i++) {
+                queries[i] = (float)(rand() % 0x100);
+            }
+
+            for (int p = 0; p < 6; p++)
+            { // searching the database
+
+                int ef_search = ef_search_array[p];
+
+                faiss::SearchParametersHNSW search_params{};
+                search_params.efSearch = ef_search;
+                cout<<"Search paramaters "<<search_params.efSearch << " "
+                << search_params.check_relative_distance <<endl;
+
+                int k = 10;
+                
+
+                std::vector<faiss::idx_t> nns(k * nq);
+                std::vector<float> dis(k * nq);
+
+                index.search(nq, queries, k, dis.data(), nns.data(), &search_params);
+            }
+
         }
+
     }
 }

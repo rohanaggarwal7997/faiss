@@ -34,6 +34,9 @@
 #include <faiss/utils/random.h>
 #include <faiss/utils/sorting.h>
 
+#include <iostream>
+using namespace std;
+
 extern "C" {
 
 /* declare BLAS functions, see http://www.netlib.org/clapack/cblas/ */
@@ -285,6 +288,9 @@ void IndexHNSW::search(
         float* distances,
         idx_t* labels,
         const SearchParameters* params_in) const {
+
+    //total_comp = 0;
+    hnsw.set_total_comp(0) ;       
     FAISS_THROW_IF_NOT(k > 0);
     FAISS_THROW_IF_NOT_MSG(
             storage,
@@ -354,7 +360,46 @@ void IndexHNSW::search(
     }
 
     hnsw_stats.combine({n1, n2, n3, ndis, nreorder});
+
+    cout<<"Search did the following comparisions "<<hnsw.get_total_comp()<<endl;
+    cout<<"Search did the following comparisions according to stats"<<hnsw_stats.n3<<endl;
+    //cout<<"Search at level 0 did the following comparisions "<<hnsw_stats.n3<<endl;
 }
+
+void IndexHNSW::pretty_print()
+{
+    IndexFlat * pointer = dynamic_cast<IndexFlat *>(storage);
+    cout<<"printing neighbors array capacity and size" << hnsw.neighbors.capacity()<<" "<<hnsw.neighbors.size() <<endl;
+    cout<<"printing offsets array capacity and size" << hnsw.offsets.capacity()<<" "<<hnsw.offsets.size()<<endl;
+    cout<<"printing levels array capacity and size" << hnsw.levels.capacity()<<" "<<hnsw.levels.size()<<endl;
+    cout<<"printing vector data array capacity and size" << pointer->codes.capacity()<<" "<<pointer->codes.size()<<endl;
+
+    cout <<"Levels array" << endl;
+    int level_cnt[20];
+    for (int i = 0; i < 20; i++)
+    level_cnt[i] = 0;
+    for (int i = 0; i < hnsw.levels.size(); i++)
+    level_cnt[hnsw.levels[i]] ++;
+
+    for (int i = 1; i < 20; i++)
+    cout << "level" <<" "<< i << " count "<< level_cnt[i]<<endl;
+
+    cout<<endl;
+
+}
+
+void IndexHNSW::pretty_print2()
+{
+    IndexFlat * pointer = dynamic_cast<IndexFlat *>(storage);
+    cout<<"printing efconstruction and M " << hnsw.efConstruction<<" "<< hnsw.nb_neighbors(0) <<endl;
+}
+
+void IndexHNSW::pretty_print3()
+{
+    IndexFlat * pointer = dynamic_cast<IndexFlat *>(storage);
+    cout<<"printing efconstruction and M " << hnsw.efConstruction<<" "<< hnsw.nb_neighbors(0) <<endl;
+}
+
 
 void IndexHNSW::add(idx_t n, const float* x) {
     FAISS_THROW_IF_NOT_MSG(
@@ -873,8 +918,7 @@ IndexHNSWFlat::IndexHNSWFlat() {
 
 IndexHNSWFlat::IndexHNSWFlat(int d, int M, MetricType metric)
         : IndexHNSW(
-                  (metric == METRIC_L2) ? new IndexFlatL2(d)
-                                        : new IndexFlat(d, metric),
+                  new IndexFlat(d, metric),
                   M) {
     own_fields = true;
     is_trained = true;

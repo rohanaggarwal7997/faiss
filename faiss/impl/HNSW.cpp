@@ -7,6 +7,8 @@
 
 // -*- c++ -*-
 
+long long int total_comp = 0;
+
 #include <faiss/impl/HNSW.h>
 
 #include <string>
@@ -24,6 +26,10 @@
 #include <limits>
 #include <type_traits>
 #endif
+
+#include <iostream>
+using namespace std;
+
 
 namespace faiss {
 
@@ -407,6 +413,7 @@ void greedy_update_nearest(
             storage_idx_t v = hnsw.neighbors[i];
             if (v < 0)
                 break;
+            total_comp++;
             float dis = qdis(v);
             if (dis < d_nearest) {
                 nearest = v;
@@ -533,11 +540,15 @@ int search_from_candidates(
     int nres = nres_in;
     int ndis = 0;
 
+
     // can be overridden by search params
     bool do_dis_check = params ? params->check_relative_distance
                                : hnsw.check_relative_distance;
     int efSearch = params ? params->efSearch : hnsw.efSearch;
     const IDSelector* sel = params ? params->sel : nullptr;
+
+
+    // cout<<"Rohan Efsearch and current dist comp"<<efSearch<<" " <<total_comp<< endl;
 
     for (int i = 0; i < candidates.size(); i++) {
         idx_t v1 = candidates.ids[i];
@@ -609,7 +620,7 @@ int search_from_candidates(
         size_t saved_j[4];
 
         ndis += jmax - begin;
-
+        
         auto add_to_heap = [&](const size_t idx, const float dis) {
             if (!sel || sel->is_member(idx)) {
                 if (nres < k) {
@@ -630,6 +641,8 @@ int search_from_candidates(
             counter += vget ? 0 : 1;
 
             if (counter == 4) {
+                total_comp+= 4;
+
                 float dis[4];
                 qdis.distances_batch_4(
                         saved_j[0],
@@ -650,6 +663,7 @@ int search_from_candidates(
         }
 
         for (size_t icnt = 0; icnt < counter; icnt++) {
+            total_comp+= 1;
             float dis = qdis(saved_j[icnt]);
             add_to_heap(saved_j[icnt], dis);
         }
@@ -668,8 +682,11 @@ int search_from_candidates(
         stats.n3 += ndis;
     }
 
+
     return nres;
 }
+
+
 
 std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
         const HNSW& hnsw,
@@ -765,6 +782,7 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
             counter += vget ? 0 : 1;
 
             if (counter == 4) {
+                total_comp += 4;
                 float dis[4];
                 qdis.distances_batch_4(
                         saved_j[0],
@@ -785,6 +803,7 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
         }
 
         for (size_t icnt = 0; icnt < counter; icnt++) {
+            total_comp += 1;
             float dis = qdis(saved_j[icnt]);
             add_to_heap(saved_j[icnt], dis);
         }
@@ -800,6 +819,16 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
 }
 
 } // anonymous namespace
+
+void  HNSW::set_total_comp(long long int) const
+{
+    total_comp = 0;
+}
+
+long long int  HNSW::get_total_comp() const
+{
+    return total_comp;
+}
 
 HNSWStats HNSW::search(
         DistanceComputer& qdis,
@@ -819,6 +848,7 @@ HNSWStats HNSW::search(
 
         for (int level = max_level; level >= 1; level--) {
             greedy_update_nearest(*this, qdis, level, nearest, d_nearest);
+            // cout<<"Rohan i am here"<<endl;
         }
 
         int ef = std::max(efSearch, k);
@@ -827,9 +857,11 @@ HNSWStats HNSW::search(
 
             candidates.push(nearest, d_nearest);
 
+            //  cout<<"Rohan i am here2"<<endl;
             search_from_candidates(
                     *this, qdis, k, I, D, candidates, vt, stats, 0, 0, params);
         } else {
+            // cout<<"Rohan i am here3"<<endl;
             std::priority_queue<Node> top_candidates =
                     search_from_candidate_unbounded(
                             *this,

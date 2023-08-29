@@ -13,13 +13,15 @@
 #include <unordered_set>
 #include <vector>
 
-#include <omp.h>
+#include </usr/local/Cellar/libomp/16.0.6/include/omp.h>
 
 #include <faiss/Index.h>
 #include <faiss/impl/FaissAssert.h>
 #include <faiss/impl/platform_macros.h>
 #include <faiss/utils/Heap.h>
 #include <faiss/utils/random.h>
+
+
 
 namespace faiss {
 
@@ -81,6 +83,10 @@ struct HNSW {
 
         int count_below(float thresh);
     };
+
+
+        void set_total_comp(long long int) const;
+        long long int get_total_comp() const;
 
     /// to sort pairs of (id, distance) from nearest to fathest or the reverse
     struct NodeDistCloser {

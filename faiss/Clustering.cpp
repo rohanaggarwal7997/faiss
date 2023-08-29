@@ -16,7 +16,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include <omp.h>
+#include </usr/local/Cellar/libomp/16.0.6/include/omp.h>
 
 #include <faiss/IndexFlat.h>
 #include <faiss/impl/FaissAssert.h>

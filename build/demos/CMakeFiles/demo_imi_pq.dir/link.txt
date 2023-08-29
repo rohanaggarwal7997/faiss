@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/demo_imi_pq.dir/demo_imi_pq.cpp.o -o demo_imi_pq  ../faiss/libfaiss.a /opt/local/lib/libomp.dylib -Xlinker -framework -Xlinker Accelerate -lm -ldl 

@@ -20,6 +20,8 @@
 
 cmake_minimum_required(VERSION 3.23.1 FATAL_ERROR)
 
+find_package(Python COMPONENTS Interpreter Development)
+
 set(FAISS_LANGUAGES CXX)
 
 if(FAISS_ENABLE_GPU)

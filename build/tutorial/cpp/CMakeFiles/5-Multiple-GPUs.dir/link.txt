@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names "CMakeFiles/5-Multiple-GPUs.dir/5-Multiple-GPUs.cpp.o" -o 5-Multiple-GPUs  ../../faiss/libfaiss.a /opt/local/lib/libomp.dylib -Xlinker -framework -Xlinker Accelerate -lm -ldl 

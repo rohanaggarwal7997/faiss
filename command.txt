@@ -1,0 +1,13 @@
+cmake -B build . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_C_API=ON -DOpenMP_C_FLAGS=-fopenmp=lomp -DOpenMP_CXX_FLAGS=-fopenmp=lomp -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" -DOpenMP_libomp_LIBRARY="/opt/local/lib/libomp.dylib" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp /opt/local/lib/libomp.dylib -I/usr/local/Cellar/libomp/16.0.6/include/" -DOpenMP_CXX_LIB_NAMES="libomp" -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp /opt/local/lib/libomp.dylib -I/usr/local/Cellar/libomp/16.0.6/include/"
+
+
+-DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/Cellar/libomp/16.0.6/include/" -DOpenMP_CXX_LIB_NAMES="omp" -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.dylib
+
+
+cd /Users/rohaagga/Desktop/Faiss/faiss/build/
+rm -rf *
+cd ..
+cmake -B build . -DFAISS_ENABLE_GPU=OFF -DOpenMP_C_FLAGS=-fopenmp=lomp -DOpenMP_CXX_FLAGS=-fopenmp=lomp -DOpenMP_C_LIB_NAMES="libomp" -DOpenMP_CXX_LIB_NAMES="libomp" -DOpenMP_libomp_LIBRARY="/opt/local/lib/libomp.dylib" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp /opt/local/lib/libomp.dylib -I/usr/local/Cellar/libomp/16.0.6/include/" -DOpenMP_CXX_LIB_NAMES="libomp" -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp /opt/local/lib/libomp.dylib -I/usr/local/Cellar/libomp/16.0.6/include/"
+make -C build -j
+cd /Users/rohaagga/Desktop/Faiss/faiss/build/tests
+./faiss_test
