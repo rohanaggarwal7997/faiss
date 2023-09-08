@@ -22,14 +22,14 @@ TEST(BinaryFlat, accuracy) {
     // dimension of the vectors to index
     int d = 16;
 
-    int m_array[] = {32,48, 64};
-    int ef_construction[] = {40,60,100};
-    int size_array[] = {10000,100000,500000,1000000};
-    int ef_search_array[] = {32,48,64,96,128,256};
+    int m_array[] = {32};
+    int ef_construction[] = {40};
+    int size_array[] = {100000,500000,1000000};
+    int ef_search_array[] = {64};
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 1; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 3; j++)
         {
             // size of the database we plan to index
             size_t nb = size_array[j];
@@ -58,7 +58,7 @@ TEST(BinaryFlat, accuracy) {
                 queries[i] = (float)(rand() % 0x100);
             }
 
-            for (int p = 0; p < 6; p++)
+            for (int p = 0; p < 1; p++)
             { // searching the database
 
                 int ef_search = ef_search_array[p];
@@ -68,7 +68,7 @@ TEST(BinaryFlat, accuracy) {
                 cout<<"Search paramaters "<<search_params.efSearch << " "
                 << search_params.check_relative_distance <<endl;
 
-                int k = 10;
+                int k = 100;
                 
 
                 std::vector<faiss::idx_t> nns(k * nq);

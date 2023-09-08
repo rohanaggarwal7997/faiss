@@ -568,6 +568,11 @@ int search_from_candidates(
         float d0 = 0;
         int v0 = candidates.pop_min(&d0);
 
+
+        /* Do a total_comp ++ at every pop */
+        total_comp++;
+        //cout<<"Popped from candidates queue"<<v0<<endl;
+
         if (do_dis_check) {
             // tricky stopping condition: there are more that ef
             // distances that are processed already that are smaller
@@ -709,10 +714,6 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
         }
 
         candidates.pop();
-
-        /* Do a total_comp ++ at every pop */
-        total_comp++;
-        cout<<"Popped from candidates queue"<<v0<<endl;
 
         size_t begin, end;
         hnsw.neighbor_range(v0, 0, &begin, &end);
