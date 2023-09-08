@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc libfaiss_python_callbacks.a CMakeFiles/faiss_python_callbacks.dir/python_callbacks.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib libfaiss_python_callbacks.a

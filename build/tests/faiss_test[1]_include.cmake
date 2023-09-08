@@ -1,5 +1,0 @@
-if(EXISTS "/Users/rohaagga/Desktop/Faiss/faiss/build/tests/faiss_test[1]_tests.cmake")
-  include("/Users/rohaagga/Desktop/Faiss/faiss/build/tests/faiss_test[1]_tests.cmake")
-else()
-  add_test(faiss_test_NOT_BUILT faiss_test_NOT_BUILT)
-endif()

@@ -548,7 +548,7 @@ int search_from_candidates(
     const IDSelector* sel = params ? params->sel : nullptr;
 
 
-    // cout<<"Rohan Efsearch and current dist comp"<<efSearch<<" " <<total_comp<< endl;
+    cout<<"Rohan do_dis_check Efsearch and current dist comp"<<do_dis_check<<" "<<efSearch<<" " <<total_comp<< endl;
 
     for (int i = 0; i < candidates.size(); i++) {
         idx_t v1 = candidates.ids[i];
