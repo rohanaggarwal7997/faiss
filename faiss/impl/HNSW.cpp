@@ -546,14 +546,12 @@ int search_from_candidates(
     int efSearch = params ? params->efSearch : hnsw.efSearch;
     const IDSelector* sel = params ? params->sel : nullptr;
 
-
-
     for (int i = 0; i < candidates.size(); i++) {
         idx_t v1 = candidates.ids[i];
         float d = candidates.dis[i];
         FAISS_ASSERT(v1 >= 0);
+        total_comp++;
         if (!sel || sel->is_member(v1)) {
-            total_comp++;
             if (nres < k) {
                 faiss::maxheap_push(++nres, D, I, d, v1);
             } else if (d < D[0]) {
@@ -571,8 +569,6 @@ int search_from_candidates(
 
 
         /* Do a total_comp ++ at every pop */
-        //total_comp++;
-        //cout<<"Popped from candidates queue"<<v0<<endl;
 
         if (do_dis_check) {
             // tricky stopping condition: there are more that ef
@@ -626,8 +622,8 @@ int search_from_candidates(
         ndis += jmax - begin;
         
         auto add_to_heap = [&](const size_t idx, const float dis) {
+            total_comp++;
             if (!sel || sel->is_member(idx)) {
-                total_comp++;
                 if (nres < k) {
                     faiss::maxheap_push(++nres, D, I, dis, idx);
                 } else if (dis < D[0]) {
@@ -696,13 +692,18 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
         DistanceComputer& qdis,
         int ef,
         VisitedTable* vt,
-        HNSWStats& stats) {
+        HNSWStats& stats,
+        const SearchParametersHNSW* params = nullptr) {
     int ndis = 0;
     std::priority_queue<Node> top_candidates;
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> candidates;
-    //const IDSelector* sel = params ? params->sel : nullptr;
+    int efSearch = params ? params->efSearch : hnsw.efSearch;
+    const IDSelector* sel = params ? params->sel : nullptr;
+
+    ef = max(efSearch, ef);
 
     total_comp++;
+    // ignore filter on entry vertex
     top_candidates.push(node);
     candidates.push(node);
 
@@ -770,7 +771,10 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
             if (top_candidates.top().first > dis ||
                 top_candidates.size() < ef) {
                 candidates.emplace(dis, idx);
-                top_candidates.emplace(dis, idx);
+                if (sel->is_member(idx))
+                {
+                  top_candidates.emplace(dis, idx);
+                }
 
                 if (top_candidates.size() > ef) {
                     top_candidates.pop();
@@ -869,7 +873,8 @@ HNSWStats HNSW::search(
                             qdis,
                             ef,
                             &vt,
-                            stats);
+                            stats,
+                            params);
 
             while (top_candidates.size() > k) {
                 top_candidates.pop();

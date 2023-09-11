@@ -17,24 +17,90 @@
 #include <faiss/utils/hamming.h>
 #include <faiss/index_io.h>
 #include <stdio.h>
+#include <faiss/impl/IDSelector.h>
+#include <vector>
+#include <cstdlib>
+#include <unordered_set>
 
 using namespace std;
 
+faiss::IDSelectorBatch createRandomSelector(int total_vids, float percentage) {
+    int select_count = static_cast<int>(total_vids * percentage);
+    std::vector<faiss::idx_t> ids(select_count);
+
+    std::unordered_set<faiss::idx_t> idSet;
+    for(int i = 0; i < select_count; ++i) {
+        while(true) {
+            faiss::idx_t new_id = rand() % total_vids + 1;
+            if(idSet.find(new_id) == idSet.end()) {
+                idSet.insert(new_id);
+                ids[i] = new_id;
+                break;
+            }
+        }
+    }
+
+    cout<<"IDs size "<<ids.size()<<endl;
+
+    return faiss::IDSelectorBatch(select_count, ids.data());
+}
 
 TEST(BinaryFlat, accuracy) {
+
+
+    std::cout << "RAND_MAX: " << RAND_MAX << std::endl;
+
+    char* index_file_path_array[] = 
+    {"/Users/rohaagga/Desktop/faiss_expts_python/SIFT_1M_SAVE_HNSW_EF40_M_32",
+    "/Users/rohaagga/Desktop/faiss_expts_python/SIFT_500K_SAVE_HNSW_EF40_M_32",
+    "/Users/rohaagga/Desktop/faiss_expts_python/SIFT_100K_SAVE_HNSW_EF40_M_32"
+    }
+    ;
+    int total_vids_array[] = 
+    {1000000, 500000, 100000
+    }
+    ;
+    const char* qfilename = "/Users/rohaagga/Desktop/faiss_expts_python/sift/sift_query.fvecs";
+
+    int total_vids;
+    char* index_file_path;
+
+
+    float percentage_array[] = {0.001,0.01, 0.1,0.3,0.5,0.7,0.9};
+
+    for (int index_array = 0; index_array < 3; index_array++)
+    {
+        index_file_path = index_file_path_array[index_array];
+        total_vids = total_vids_array[index_array];
+
+    for (int perp = 0; perp < 7; perp++)
+    {
+      float percentage = percentage_array[perp];
+
+        faiss::IDSelectorBatch selector = createRandomSelector(total_vids, percentage);
+
+            int qualifying_vids = 0;
+        for(int i = 1; i <= total_vids; ++i) {
+            if(selector.is_member(i)) {
+                ++qualifying_vids;
+            }
+        }
+        std::cout << "Number of qualifying vids: " << qualifying_vids << std::endl;
+
+
+
     // dimension of the vectors to index
     int d = 768;
 
     int ef_search_array[] = {128};
 
-    const char* index_file_path = "/Users/rohaagga/Desktop/faiss_expts_python/SIFT_1M_SAVE_HNSW_EF40_M_32";
-    const char* qfilename = "/Users/rohaagga/Desktop/faiss_expts_python/sift/sift_query.fvecs";
+
 
     // Read the index from the file
     faiss::Index* index = faiss::read_index(index_file_path);
     faiss::IndexHNSW* hnsw_index = dynamic_cast<faiss::IndexHNSW*>(index);
 
-    hnsw_index->hnsw.search_bounded_queue = 1;
+    hnsw_index->hnsw.search_bounded_queue = 0;
 
 
     // Now the index is loaded in memory and you can use it for search, etc.
@@ -84,6 +150,8 @@ TEST(BinaryFlat, accuracy) {
         cout<<"Search paramaters "<<search_params.efSearch << " "
         << search_params.check_relative_distance <<endl;
 
+        search_params.sel = &selector;
+
         int k = 100;
         size_t sum_comparisions = 0;
         
@@ -96,6 +164,12 @@ TEST(BinaryFlat, accuracy) {
           index->search(1, queries + qq * query_dimension,
                         k, dis.data(), nns.data(), &search_params);
           sum_comparisions += hnsw_index->hnsw.get_total_comp();
+
+        //   for(int i = 0; i < k; ++i) {
+        //     std::cout << "Neighbor " << i << ": Index = " << nns[i] 
+        //         << ", Distance = " << dis[i] << "\n";
+        //   }
+        //   std::cout << "\n"; // Print a blank line between queries
         }
         cout<<"Total comparisions "<<sum_comparisions<<endl;
 
@@ -105,4 +179,7 @@ TEST(BinaryFlat, accuracy) {
     // Don't forget to free the memory when you are done
     free(queries);
     delete index;
+
+    }
+    }
 }
