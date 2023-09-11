@@ -361,7 +361,7 @@ void IndexHNSW::search(
 
     hnsw_stats.combine({n1, n2, n3, ndis, nreorder});
 
-    cout<<"Search did the following comparisions "<<hnsw.get_total_comp()<<endl;
+    //cout<<"Search did the following comparisions "<<hnsw.get_total_comp()<<endl;
 }
 
 void IndexHNSW::pretty_print()

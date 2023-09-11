@@ -553,6 +553,7 @@ int search_from_candidates(
         float d = candidates.dis[i];
         FAISS_ASSERT(v1 >= 0);
         if (!sel || sel->is_member(v1)) {
+            total_comp++;
             if (nres < k) {
                 faiss::maxheap_push(++nres, D, I, d, v1);
             } else if (d < D[0]) {
@@ -570,7 +571,7 @@ int search_from_candidates(
 
 
         /* Do a total_comp ++ at every pop */
-        total_comp++;
+        //total_comp++;
         //cout<<"Popped from candidates queue"<<v0<<endl;
 
         if (do_dis_check) {
@@ -626,6 +627,7 @@ int search_from_candidates(
         
         auto add_to_heap = [&](const size_t idx, const float dis) {
             if (!sel || sel->is_member(idx)) {
+                total_comp++;
                 if (nres < k) {
                     faiss::maxheap_push(++nres, D, I, dis, idx);
                 } else if (dis < D[0]) {
@@ -698,7 +700,9 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
     int ndis = 0;
     std::priority_queue<Node> top_candidates;
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> candidates;
+    //const IDSelector* sel = params ? params->sel : nullptr;
 
+    total_comp++;
     top_candidates.push(node);
     candidates.push(node);
 
@@ -762,6 +766,7 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
         ndis += jmax - begin;
 
         auto add_to_heap = [&](const size_t idx, const float dis) {
+            total_comp++;
             if (top_candidates.top().first > dis ||
                 top_candidates.size() < ef) {
                 candidates.emplace(dis, idx);
