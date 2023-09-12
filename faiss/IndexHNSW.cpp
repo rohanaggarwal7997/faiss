@@ -290,7 +290,8 @@ void IndexHNSW::search(
         const SearchParameters* params_in) const {
 
     //total_comp = 0;
-    hnsw.set_total_comp(0) ;       
+    hnsw.set_total_comp(0) ;    
+    hnsw.clear_path_vec();   
     FAISS_THROW_IF_NOT(k > 0);
     FAISS_THROW_IF_NOT_MSG(
             storage,

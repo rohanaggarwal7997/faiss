@@ -24,31 +24,31 @@
 
 using namespace std;
 
-faiss::IDSelectorBatch createRandomSelector(int total_vids, float percentage) {
-    int select_count = static_cast<int>(total_vids * percentage);
-    std::vector<faiss::idx_t> ids(select_count);
+faiss::IDSelectorBatch createRandomSelector(int total_vids, vector<faiss::idx_t> rejected) {
+    std::vector<faiss::idx_t> ids;
+    std::unordered_set<faiss::idx_t> rejectedSet(rejected.begin(), rejected.end());
 
-    std::unordered_set<faiss::idx_t> idSet;
-    for(int i = 0; i < select_count; ++i) {
-        while(true) {
-            faiss::idx_t new_id = rand() % total_vids + 1;
-            if(idSet.find(new_id) == idSet.end()) {
-                idSet.insert(new_id);
-                ids[i] = new_id;
-                break;
-            }
+    for(int i = 1; i <= total_vids; ++i) {
+        if(rejectedSet.find(i) == rejectedSet.end()) {
+            ids.push_back(i);
         }
     }
-
-    cout<<"IDs size "<<ids.size()<<endl;
-
-    return faiss::IDSelectorBatch(select_count, ids.data());
+    return faiss::IDSelectorBatch(ids.size(), ids.data());
 }
 
 TEST(BinaryFlat, accuracy) {
 
 
     std::cout << "RAND_MAX: " << RAND_MAX << std::endl;
+
+
+    vector<vector<faiss::idx_t>> rejected_array;
+
+    for(int i =0; i < 100; i++)
+    {
+        vector<faiss::idx_t> r;
+        rejected_array.push_back(r);
+    }
 
     char* index_file_path_array[] = 
     {"/Users/rohaagga/Desktop/faiss_expts_python/SIFT_1M_SAVE_HNSW_EF40_M_32",
@@ -73,21 +73,13 @@ TEST(BinaryFlat, accuracy) {
         index_file_path = index_file_path_array[index_array];
         total_vids = total_vids_array[index_array];
 
-    for (int perp = 0; perp < 7; perp++)
-    {
-      float percentage = percentage_array[perp];
-
-        faiss::IDSelectorBatch selector = createRandomSelector(total_vids, percentage);
-
-            int qualifying_vids = 0;
-        for(int i = 1; i <= total_vids; ++i) {
-            if(selector.is_member(i)) {
-                ++qualifying_vids;
-            }
+        for(int i =0; i < 100; i++)
+        {
+            rejected_array[i].clear();
         }
-        std::cout << "Number of qualifying vids: " << qualifying_vids << std::endl;
 
-
+    for (int perp = 0; perp < 10; perp++)
+    {
 
     // dimension of the vectors to index
     int d = 768;
@@ -150,8 +142,6 @@ TEST(BinaryFlat, accuracy) {
         cout<<"Search paramaters "<<search_params.efSearch << " "
         << search_params.check_relative_distance <<endl;
 
-        search_params.sel = &selector;
-
         int k = 100;
         size_t sum_comparisions = 0;
         
@@ -161,9 +151,31 @@ TEST(BinaryFlat, accuracy) {
 
         for(int qq = 0; qq < 100; qq++)
         {
+          faiss::IDSelectorBatch selector = createRandomSelector(total_vids, rejected_array[qq]);
+          search_params.sel = &selector;
+
+          if (qq == 0)
+          {
+              cout<<" rejected array size"<<rejected_array[qq].size()<<endl;
+          }
+          
           index->search(1, queries + qq * query_dimension,
                         k, dis.data(), nns.data(), &search_params);
           sum_comparisions += hnsw_index->hnsw.get_total_comp();
+          std::set<faiss::idx_t> nns_set(nns.begin(), nns.end());
+          
+          vector<faiss::idx_t> current_rejected = hnsw_index->hnsw.get_path_vec();
+          if (qq == 0)
+          {
+              cout<<"Current rejected size"<<current_rejected.size()<<endl;
+          }
+          for (int iii = 0; iii < current_rejected.size(); iii++)
+          {
+              if(nns_set.find(current_rejected[iii]) == nns_set.end())
+              {
+                rejected_array[qq].push_back(current_rejected[iii]);
+              }
+          }
 
         //   for(int i = 0; i < k; ++i) {
         //     std::cout << "Neighbor " << i << ": Index = " << nns[i] 

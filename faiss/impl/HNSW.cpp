@@ -7,7 +7,6 @@
 
 // -*- c++ -*-
 
-long long int total_comp = 0;
 
 #include <faiss/impl/HNSW.h>
 
@@ -28,7 +27,12 @@ long long int total_comp = 0;
 #endif
 
 #include <iostream>
+#include <vector>
 using namespace std;
+
+
+long long int total_comp = 0;
+vector<faiss::idx_t> travelled_path;
 
 
 namespace faiss {
@@ -768,6 +772,7 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
 
         auto add_to_heap = [&](const size_t idx, const float dis) {
             total_comp++;
+            travelled_path.push_back(idx);
             if (top_candidates.top().first > dis ||
                 top_candidates.size() < ef) {
                 candidates.emplace(dis, idx);
@@ -835,6 +840,17 @@ void  HNSW::set_total_comp(long long int) const
 long long int  HNSW::get_total_comp() const
 {
     return total_comp;
+}
+
+
+void  HNSW::clear_path_vec() const
+{
+    travelled_path.clear();
+}
+
+vector<faiss::idx_t>  HNSW::get_path_vec() const
+{
+    return travelled_path;
 }
 
 HNSWStats HNSW::search(

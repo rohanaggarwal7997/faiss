@@ -87,6 +87,8 @@ struct HNSW {
 
         void set_total_comp(long long int) const;
         long long int get_total_comp() const;
+        void clear_path_vec() const;
+        std::vector<faiss::idx_t>  get_path_vec() const;
 
     /// to sort pairs of (id, distance) from nearest to fathest or the reverse
     struct NodeDistCloser {
