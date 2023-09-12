@@ -776,9 +776,16 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
             if (top_candidates.top().first > dis ||
                 top_candidates.size() < ef) {
                 candidates.emplace(dis, idx);
-                if (sel->is_member(idx))
+                if (sel != NULL)
                 {
-                  top_candidates.emplace(dis, idx);
+                    if (sel->is_member(idx))
+                    {
+                    top_candidates.emplace(dis, idx);
+                    }
+                }
+                else
+                {
+                    top_candidates.emplace(dis, idx);
                 }
 
                 if (top_candidates.size() > ef) {

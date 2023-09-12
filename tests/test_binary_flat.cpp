@@ -43,11 +43,18 @@ TEST(BinaryFlat, accuracy) {
 
 
     vector<vector<faiss::idx_t>> rejected_array;
+    int already_placed = 0;
+    std::vector<std::set<faiss::idx_t>> nns_set;
 
     for(int i =0; i < 100; i++)
     {
         vector<faiss::idx_t> r;
         rejected_array.push_back(r);
+    }
+    for(int i =0; i < 100; i++)
+    {
+        std::set<faiss::idx_t> r;
+        nns_set.push_back(r);
     }
 
     char* index_file_path_array[] = 
@@ -77,6 +84,11 @@ TEST(BinaryFlat, accuracy) {
         {
             rejected_array[i].clear();
         }
+        for(int i =0; i < 100; i++)
+        {
+            nns_set[i].clear();
+        }
+        already_placed = 0;
 
     for (int perp = 0; perp < 10; perp++)
     {
@@ -92,6 +104,7 @@ TEST(BinaryFlat, accuracy) {
     faiss::Index* index = faiss::read_index(index_file_path);
     faiss::IndexHNSW* hnsw_index = dynamic_cast<faiss::IndexHNSW*>(index);
 
+    //unbounded
     hnsw_index->hnsw.search_bounded_queue = 0;
 
 
@@ -134,6 +147,7 @@ TEST(BinaryFlat, accuracy) {
 
     for (int p = 0; p < 1; p++)
     { // searching the database
+        
 
         int ef_search = ef_search_array[p];
 
@@ -145,9 +159,14 @@ TEST(BinaryFlat, accuracy) {
         int k = 100;
         size_t sum_comparisions = 0;
         
+        faiss::SearchParametersHNSW search_params_gold{};
+        search_params_gold.efSearch = ef_search;
 
         std::vector<faiss::idx_t> nns(k * 1);
         std::vector<float> dis(k * 1);
+
+        std::vector<faiss::idx_t> nns_gold(k * 1);
+        std::vector<float> dis_gold(k * 1);
 
         for(int qq = 0; qq < 100; qq++)
         {
@@ -160,9 +179,73 @@ TEST(BinaryFlat, accuracy) {
           }
           
           index->search(1, queries + qq * query_dimension,
+                        k, dis_gold.data(), nns_gold.data(), &search_params_gold);
+
+          
+          while(1)
+          {
+
+            index->search(1, queries + qq * query_dimension,
                         k, dis.data(), nns.data(), &search_params);
+
+            std::sort(dis_gold.begin(), dis_gold.begin()+100);
+            std::sort(dis.begin(), dis.begin() +100);
+
+            size_t coun_differnet_from_gold =0;
+            for (int jjj = 0; jjj < k; jjj++)
+            {
+                if (nns_gold[jjj] < nns[jjj] - 0.1)
+                {
+                    coun_differnet_from_gold++;
+                }
+            }
+            if (coun_differnet_from_gold <= 3)
+            {
+                if (qq == 0)
+                {
+                    cout<<"Exited with efsearch"<<search_params.efSearch<<" "<<coun_differnet_from_gold<<endl;
+                }
+                break;
+            }
+
+            // if (qq == 0)
+            // {
+            //     cout<<"efsearch increased because different count "<<search_params.efSearch<<" "<<coun_differnet_from_gold<<endl;
+            // }
+
+            search_params.efSearch = search_params.efSearch + 10;
+
+            if (search_params.efSearch > 512)
+            {
+                for(int result_iterator =0; result_iterator <k; result_iterator++)
+                {
+                    cout<<nns_gold[result_iterator]<<" "<<dis_gold[result_iterator]<<",";
+                }
+                cout<<endl;
+                for(int result_iterator =0; result_iterator <k; result_iterator++)
+                {
+                    cout<<nns[result_iterator]<<" "<<dis[result_iterator]<<",";
+                }
+                cout<<endl;
+                cout<<"Exited with efsearch out of bounds"<<search_params.efSearch<<endl;
+                cout<<"Count different "<<coun_differnet_from_gold<<endl;
+                break;
+            }
+
+          }
+
+          search_params.efSearch = 128;
+
+
           sum_comparisions += hnsw_index->hnsw.get_total_comp();
-          std::set<faiss::idx_t> nns_set(nns.begin(), nns.end());
+
+          if (already_placed == 0)
+          {
+              for (int iii = 0; iii < k; iii++)
+              {
+                nns_set[qq].insert(nns_gold[iii]);
+              }
+          }
           
           vector<faiss::idx_t> current_rejected = hnsw_index->hnsw.get_path_vec();
           if (qq == 0)
@@ -171,7 +254,7 @@ TEST(BinaryFlat, accuracy) {
           }
           for (int iii = 0; iii < current_rejected.size(); iii++)
           {
-              if(nns_set.find(current_rejected[iii]) == nns_set.end())
+              if(nns_set[qq].find(current_rejected[iii]) == nns_set[qq].end())
               {
                 rejected_array[qq].push_back(current_rejected[iii]);
               }
@@ -191,6 +274,8 @@ TEST(BinaryFlat, accuracy) {
     // Don't forget to free the memory when you are done
     free(queries);
     delete index;
+
+    already_placed = 1;
 
     }
     }
