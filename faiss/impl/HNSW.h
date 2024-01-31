@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include </usr/local/Cellar/libomp/16.0.6/include/omp.h>
+#include <omp.h>
 
 #include <faiss/Index.h>
 #include <faiss/impl/FaissAssert.h>

@@ -34,23 +34,31 @@ TEST(BinaryFlat, accuracy) {
         for (int j = 0; j < 2; j++)
         {
             // size of the database we plan to index
-            size_t nb = size_array[j];
+            size_t nb = size_array[0];
 
             // make the index object and train it
             faiss::IndexHNSWFlat index(d, m_array[i]);
 
-            index.hnsw.efConstruction = ef_construction[0];
+            index.hnsw.efConstruction = ef_construction[j];
+
+            cout<<"Rohan i am here"<<endl;
 
             index.hnsw.set_total_comp(0);
+
+            cout<<"Rohan i am here"<<endl;
 
             float *database = new float[nb*d];
             for (size_t i = 0; i < nb * (d); i++) {
                 database[i] = (float)(rand() % 0x100);
             }
 
+            cout<<"Rohan i am here"<<endl;
+
             { // populating the database
                 index.add(nb, database);
             }
+
+            cout<<"Rohan i am here"<<endl;
 
             cout<<"Rohan experiment"<<index.hnsw.get_total_comp();
 

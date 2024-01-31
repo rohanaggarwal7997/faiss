@@ -862,6 +862,8 @@ long long int  HNSW::get_total_comp() const
     }
     cout<<"Rohan sum"<<sum<<endl;
 
+    return sum;
+
 }
 
 HNSWStats HNSW::search(
