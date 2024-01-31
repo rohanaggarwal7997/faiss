@@ -288,9 +288,7 @@ void IndexHNSW::search(
         float* distances,
         idx_t* labels,
         const SearchParameters* params_in) const {
-
-    //total_comp = 0;
-    hnsw.set_total_comp(0) ;       
+   
     FAISS_THROW_IF_NOT(k > 0);
     FAISS_THROW_IF_NOT_MSG(
             storage,
@@ -360,10 +358,6 @@ void IndexHNSW::search(
     }
 
     hnsw_stats.combine({n1, n2, n3, ndis, nreorder});
-
-    cout<<"Search did the following comparisions "<<hnsw.get_total_comp()<<endl;
-    cout<<"Search did the following comparisions according to stats"<<hnsw_stats.n3<<endl;
-    //cout<<"Search at level 0 did the following comparisions "<<hnsw_stats.n3<<endl;
 }
 
 void IndexHNSW::pretty_print()
