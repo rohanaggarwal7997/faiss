@@ -7,7 +7,7 @@
 
 // -*- c++ -*-
 
-long long int total_comp = 0;
+#include <omp.h>
 
 #include <faiss/impl/HNSW.h>
 
@@ -26,10 +26,18 @@ long long int total_comp = 0;
 #include <limits>
 #include <type_traits>
 #endif
-
 #include <iostream>
 using namespace std;
 
+
+long long int total_comp[100000];
+
+
+void  increment_total_comp(long long int x)
+{
+    int threadID = omp_get_thread_num();
+    total_comp[threadID%100000] +=x;
+}
 
 namespace faiss {
 
@@ -243,14 +251,20 @@ void HNSW::shrink_neighbor_list(
         float dist_v1_q = v1.d;
 
         bool good = true;
+        size_t dist_computations = 0;
         for (NodeDistFarther v2 : output) {
             float dist_v1_v2 = qdis.symmetric_dis(v2.id, v1.id);
+            dist_computations++;
 
             if (dist_v1_v2 < dist_v1_q) {
                 good = false;
                 break;
             }
         }
+
+        increment_total_comp((long long int)(dist_computations));
+
+        
 
         if (good) {
             output.push_back(v1);
@@ -319,12 +333,15 @@ void add_link(
     // otherwise we let them fight out which to keep
 
     // copy to resultSet...
+    size_t ii;
     std::priority_queue<NodeDistCloser> resultSet;
     resultSet.emplace(qdis.symmetric_dis(src, dest), dest);
-    for (size_t i = begin; i < end; i++) { // HERE WAS THE BUG
-        storage_idx_t neigh = hnsw.neighbors[i];
+    for (ii  = begin; ii < end; ii++) { // HERE WAS THE BUG
+        storage_idx_t neigh = hnsw.neighbors[ii];
         resultSet.emplace(qdis.symmetric_dis(src, neigh), neigh);
     }
+
+    increment_total_comp((long long int)(ii - begin + 1));
 
     shrink_neighbor_list(qdis, resultSet, end - begin);
 
@@ -351,6 +368,8 @@ void search_neighbors_to_add(
         VisitedTable& vt) {
     // top is nearest candidate
     std::priority_queue<NodeDistFarther> candidates;
+
+    long long int dist_computations = 0;
 
     NodeDistFarther ev(d_entry_point, entry_point);
     candidates.push(ev);
@@ -379,6 +398,7 @@ void search_neighbors_to_add(
             vt.set(nodeId);
 
             float dis = qdis(nodeId);
+            dist_computations++;
             NodeDistFarther evE1(dis, nodeId);
 
             if (results.size() < hnsw.efConstruction || results.top().d > dis) {
@@ -391,6 +411,9 @@ void search_neighbors_to_add(
         }
     }
     vt.advance();
+
+
+    increment_total_comp((long long int)(dist_computations));
 }
 
 /**************************************************************
@@ -407,9 +430,10 @@ void greedy_update_nearest(
     for (;;) {
         storage_idx_t prev_nearest = nearest;
 
+        size_t i;
         size_t begin, end;
         hnsw.neighbor_range(nearest, level, &begin, &end);
-        for (size_t i = begin; i < end; i++) {
+        for (i = begin; i < end; i++) {
             storage_idx_t v = hnsw.neighbors[i];
             if (v < 0)
                 break;
@@ -419,6 +443,7 @@ void greedy_update_nearest(
                 d_nearest = dis;
             }
         }
+        increment_total_comp((long long int)(i - begin));
         if (nearest == prev_nearest) {
             return;
         }
@@ -496,6 +521,8 @@ void HNSW::add_with_locks(
 
     int level = max_level; // level at which we start adding neighbors
     float d_nearest = ptdis(nearest);
+
+    increment_total_comp((long long int)(1));
 
     for (; level > pt_level; level--) {
         greedy_update_nearest(*this, ptdis, level, nearest, d_nearest);
@@ -813,12 +840,28 @@ std::priority_queue<HNSW::Node> search_from_candidate_unbounded(
 
 void  HNSW::set_total_comp(long long int) const
 {
-    total_comp = 0;
+    for (int i =0; i < 100000; i++)
+    {
+        total_comp[i] = 0;
+    }
 }
+
 
 long long int  HNSW::get_total_comp() const
 {
-    return total_comp;
+    long long int sum = 0;
+
+    for (int i =0; i < 100000; i++)
+    {
+        sum+=total_comp[i];
+
+        if (total_comp[i] > 0)
+        {
+            cout<<"Rohan totalcomp"<<i<<total_comp[i]<<endl;
+        }
+    }
+    cout<<"Rohan sum"<<sum<<endl;
+
 }
 
 HNSWStats HNSW::search(

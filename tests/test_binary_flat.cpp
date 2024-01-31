@@ -19,17 +19,19 @@ using namespace std;
 
 
 TEST(BinaryFlat, accuracy) {
+
+    omp_set_num_threads(32);
+
     // dimension of the vectors to index
-    int d = 16;
+    int d = 960;
 
-    int m_array[] = {32,48, 64};
-    int ef_construction[] = {40,60,100};
-    int size_array[] = {10000,100000,500000,1000000};
-    int ef_search_array[] = {32,48,64,96,128,256};
+    int m_array[] = {32};
+    int ef_construction[] = {64,200};
+    int size_array[] = {1000000};
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 1; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 2; j++)
         {
             // size of the database we plan to index
             size_t nb = size_array[j];
@@ -37,10 +39,9 @@ TEST(BinaryFlat, accuracy) {
             // make the index object and train it
             faiss::IndexHNSWFlat index(d, m_array[i]);
 
-            index.hnsw.efConstruction = ef_construction[i];
+            index.hnsw.efConstruction = ef_construction[0];
 
-            index.pretty_print2();
-            cout<<"Number of elements "<<nb<<endl;
+            index.hnsw.set_total_comp(0);
 
             float *database = new float[nb*d];
             for (size_t i = 0; i < nb * (d); i++) {
@@ -51,31 +52,7 @@ TEST(BinaryFlat, accuracy) {
                 index.add(nb, database);
             }
 
-            size_t nq = 1;
-            float *queries = new float[nq*d];
-
-            for (size_t i = 0; i < nq * (d); i++) {
-                queries[i] = (float)(rand() % 0x100);
-            }
-
-            for (int p = 0; p < 6; p++)
-            { // searching the database
-
-                int ef_search = ef_search_array[p];
-
-                faiss::SearchParametersHNSW search_params{};
-                search_params.efSearch = ef_search;
-                cout<<"Search paramaters "<<search_params.efSearch << " "
-                << search_params.check_relative_distance <<endl;
-
-                int k = 10;
-                
-
-                std::vector<faiss::idx_t> nns(k * nq);
-                std::vector<float> dis(k * nq);
-
-                index.search(nq, queries, k, dis.data(), nns.data(), &search_params);
-            }
+            cout<<"Rohan experiment"<<index.hnsw.get_total_comp();
 
         }
 
