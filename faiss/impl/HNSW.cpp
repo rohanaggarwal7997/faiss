@@ -30,13 +30,27 @@
 using namespace std;
 
 
-long long int total_comp[100000];
+long long int total_compgr[100000];
+long long int total_compdq[100000];
+long long int total_compnh[100000];
 
 
-void  increment_total_comp(long long int x)
+void  increment_total_compgr(long long int x)
 {
     int threadID = omp_get_thread_num();
-    total_comp[threadID%100000] +=x;
+    total_compgr[threadID%100000] +=x;
+}
+
+void  increment_total_compdq(long long int x)
+{
+    int threadID = omp_get_thread_num();
+    total_compdq[threadID%100000] +=x;
+}
+
+void  increment_total_compnh(long long int x)
+{
+    int threadID = omp_get_thread_num();
+    total_compnh[threadID%100000] +=x;
 }
 
 namespace faiss {
@@ -262,7 +276,7 @@ void HNSW::shrink_neighbor_list(
             }
         }
 
-        increment_total_comp((long long int)(dist_computations));
+        increment_total_compnh((long long int)(dist_computations));
 
         
 
@@ -341,7 +355,7 @@ void add_link(
         resultSet.emplace(qdis.symmetric_dis(src, neigh), neigh);
     }
 
-    increment_total_comp((long long int)(ii - begin + 1));
+    increment_total_compnh((long long int)(ii - begin + 1));
 
     shrink_neighbor_list(qdis, resultSet, end - begin);
 
@@ -413,7 +427,7 @@ void search_neighbors_to_add(
     vt.advance();
 
 
-    increment_total_comp((long long int)(dist_computations));
+    increment_total_compdq((long long int)(dist_computations));
 }
 
 /**************************************************************
@@ -443,7 +457,7 @@ void greedy_update_nearest(
                 d_nearest = dis;
             }
         }
-        increment_total_comp((long long int)(i - begin));
+        increment_total_compgr((long long int)(i - begin));
         if (nearest == prev_nearest) {
             return;
         }
@@ -522,7 +536,7 @@ void HNSW::add_with_locks(
     int level = max_level; // level at which we start adding neighbors
     float d_nearest = ptdis(nearest);
 
-    increment_total_comp((long long int)(1));
+    increment_total_compgr((long long int)(1));
 
     for (; level > pt_level; level--) {
         greedy_update_nearest(*this, ptdis, level, nearest, d_nearest);
@@ -842,7 +856,15 @@ void  HNSW::set_total_comp(long long int) const
 {
     for (int i =0; i < 100000; i++)
     {
-        total_comp[i] = 0;
+        total_compgr[i] = 0;
+    }
+    for (int i =0; i < 100000; i++)
+    {
+        total_compdq[i] = 0;
+    }
+    for (int i =0; i < 100000; i++)
+    {
+        total_compnh[i] = 0;
     }
 }
 
@@ -850,19 +872,43 @@ void  HNSW::set_total_comp(long long int) const
 long long int  HNSW::get_total_comp() const
 {
     long long int sum = 0;
+    long long int sum2 = 0;
+    long long int sum3 = 0;
 
     for (int i =0; i < 100000; i++)
     {
-        sum+=total_comp[i];
+        sum+=total_compgr[i];
 
-        if (total_comp[i] > 0)
+        if (total_compgr[i] > 0)
         {
-            cout<<"Rohan totalcomp"<<i<<total_comp[i]<<endl;
+            cout<<"Rohan totalcomp"<<i<<total_compgr[i]<<endl;
         }
     }
     cout<<"Rohan sum"<<sum<<endl;
 
-    return sum;
+    for (int i =0; i < 100000; i++)
+    {
+        sum2+=total_compdq[i];
+
+        if (total_compdq[i] > 0)
+        {
+            cout<<"Rohan totalcomp"<<i<<total_compdq[i]<<endl;
+        }
+    }
+    cout<<"Rohan sum2"<<sum2<<endl;
+
+    for (int i =0; i < 100000; i++)
+    {
+        sum3+=total_compnh[i];
+
+        if (total_compnh[i] > 0)
+        {
+            cout<<"Rohan totalcomp"<<i<<total_compnh[i]<<endl;
+        }
+    }
+    cout<<"Rohan sum"<<sum3<<endl;
+
+    return sum+sum2+sum3;
 
 }
 
