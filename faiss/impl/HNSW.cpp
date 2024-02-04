@@ -869,8 +869,43 @@ void  HNSW::set_total_comp(long long int) const
 }
 
 
+long long int HNSW::print_total_neighbors() const
+{
+  long long int sum = 0;
+  int  i = 0;
+
+  /* go through all vertices */
+  for (i = 0; i < levels.size(); i++)
+  {
+      /* Find max level + 1 */
+      int level = levels[i];
+
+      for (int j = 0; j < level; j++)
+      {
+        /* get neighbor range */
+        size_t begin, end;
+        neighbor_range(i, j, &begin, &end);
+        for (size_t k = begin; k < end; k++) {
+            if (neighbors[k] != -1)
+            {
+                sum++;
+            }
+            else if ((neighbors[k] < 0) && (neighbors[k] != -1))
+            {
+                cout<<"Rohan weird neighbor found"<<endl;
+            }
+        }
+
+      }
+  }
+
+  return sum;
+}
+
+
 long long int  HNSW::get_total_comp() const
 {
+    cout<<"Rohan total neighbors  "<<print_total_neighbors()<<endl;
     long long int sum = 0;
     long long int sum2 = 0;
     long long int sum3 = 0;
@@ -881,10 +916,10 @@ long long int  HNSW::get_total_comp() const
 
         if (total_compgr[i] > 0)
         {
-            cout<<"Rohan totalcomp"<<i<<total_compgr[i]<<endl;
+            //cout<<"Rohan totalcomp"<<i<<total_compgr[i]<<endl;
         }
     }
-    cout<<"Rohan sum"<<sum<<endl;
+    cout<<"Rohan greedy  "<<sum<<endl;
 
     for (int i =0; i < 100000; i++)
     {
@@ -892,10 +927,10 @@ long long int  HNSW::get_total_comp() const
 
         if (total_compdq[i] > 0)
         {
-            cout<<"Rohan totalcomp"<<i<<total_compdq[i]<<endl;
+            //cout<<"Rohan totalcomp"<<i<<total_compdq[i]<<endl;
         }
     }
-    cout<<"Rohan sum2"<<sum2<<endl;
+    cout<<"Rohan dq  "<<sum2<<endl;
 
     for (int i =0; i < 100000; i++)
     {
@@ -903,10 +938,10 @@ long long int  HNSW::get_total_comp() const
 
         if (total_compnh[i] > 0)
         {
-            cout<<"Rohan totalcomp"<<i<<total_compnh[i]<<endl;
+            //cout<<"Rohan totalcomp"<<i<<total_compnh[i]<<endl;
         }
     }
-    cout<<"Rohan sum"<<sum3<<endl;
+    cout<<"Rohan nh  "<<sum3<<endl;
 
     return sum+sum2+sum3;
 

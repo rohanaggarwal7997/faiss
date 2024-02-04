@@ -86,6 +86,7 @@ struct HNSW {
 
 
         void set_total_comp(long long int) const;
+        long long int print_total_neighbors() const;
         long long int get_total_comp() const;
 
     /// to sort pairs of (id, distance) from nearest to fathest or the reverse
